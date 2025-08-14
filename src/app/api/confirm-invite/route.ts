@@ -8,8 +8,12 @@ export const POST = async (req: Request) => {
 
         // a valid invite code must match this format for attendant FS25-3021, the number after FS25 is between 1000 and 3500
         const inviteCodePattern = /^FS25-(1[0-9]{3}|2[0-9]{3}|3[0-4][0-9]{2}|3500)$/;
+        // a valid invite code for drivers is FS25-DRIVER-1002
+        const driverInviteCodePattern = /^FS25-DRIVER-(1[0-9]{3}|2[0-9]{3}|3[0-4][0-9]{2}|3500)$/;
 
-        if (!inviteCodePattern.test(inviteCode)) {
+        // the code sent must match one of the patterns, not both
+
+        if (!inviteCodePattern.test(inviteCode) && !driverInviteCodePattern.test(inviteCode)) {
             return NextResponse.json({
                 'message': "Invalid invite code format"
             }, {status: 400});
