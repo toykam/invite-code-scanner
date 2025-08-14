@@ -13,7 +13,7 @@ export const POST = async (req: Request) => {
 
         // the code sent must match one of the patterns, not both
 
-        if (!inviteCodePattern.test(inviteCode) && !driverInviteCodePattern.test(inviteCode)) {
+        if (!inviteCodePattern.test(inviteCode) || !driverInviteCodePattern.test(inviteCode)) {
             return NextResponse.json({
                 'message': "Invalid invite code format"
             }, {status: 400});
