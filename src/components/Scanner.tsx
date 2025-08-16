@@ -130,12 +130,12 @@ export default function ScanComponent() {
           >
             {scanningPaused ? 'Start Scanning' : 'Pause Scanning'}
           </button>
-          <button
+          {/* <button
             className="px-4 py-2 rounded bg-gray-600 text-white font-semibold shadow hover:bg-gray-700 transition"
             onClick={() => setFullscreen(f => !f)}
           >
             {fullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
-          </button>
+          </button> */}
           <button
             className="px-4 py-2 rounded bg-red-500 text-white font-semibold shadow hover:bg-red-600 transition"
             onClick={() => setResult(null)}
