@@ -7,7 +7,7 @@ import { Scanner } from "@yudiel/react-qr-scanner"
 import Swal from "sweetalert2";
 
 
-export default function ScanComponent() {
+export default function ScanComponent({ eventSlug, eventName, scannerId }: { eventSlug: string; eventName: string; scannerId: string }) {
   const [result, setResult] = useState<string | null | undefined>(null);
   const [scanningPaused, setScanningPaused] = useState(false);
   const [selectedCamera, setSelectedCamera] = useState<string | undefined>(undefined);
@@ -28,7 +28,7 @@ export default function ScanComponent() {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ inviteCode: result ?? "" }),
+          body: JSON.stringify({ inviteCode: result ?? "", eventSlug, scannerId }),
         });
         const responseData = await response.json();
         if (response.ok) {
@@ -86,7 +86,7 @@ export default function ScanComponent() {
   useEffect(() => {
     const fetchTotalScanned = async () => {
       try {
-        const response = await fetch("/api/total-scanned-invites");
+        const response = await fetch(`/api/total-scanned-invites?eventSlug=${eventSlug}`);
         const data = await response.json();
         if (response.ok) {
           setTotalScanned(data.totalScanned);
@@ -98,7 +98,7 @@ export default function ScanComponent() {
       }
     };
     fetchTotalScanned();
-  }, []);
+  }, [eventSlug]);
 
   // Set default camera when cameras list changes
   useEffect(() => {
@@ -121,7 +121,8 @@ export default function ScanComponent() {
       ref={scannerRef}
       className={`max-w-lg mx-auto p-6 rounded-xl shadow-lg bg-white mt-10 ${fullscreen ? 'fixed inset-0 z-50 bg-black flex flex-col justify-center items-center' : ''}`}
     >
-      <h1 className="text-2xl font-bold mb-4 text-center text-gray-800">QR Code Scanner</h1>
+      <h1 className="text-2xl font-bold mb-2 text-center text-gray-800">{eventName}</h1>
+      <p className="text-sm text-gray-600 text-center mb-4">QR Code Scanner</p>
       <div className="flex flex-col gap-4 mb-4">
         <div className="flex gap-2 justify-center">
           <button

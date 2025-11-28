@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
   output   = "../src/generated/prisma"
@@ -11,17 +5,81 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
-
-model Invite {
+model Admin {
   id        String   @id @default(cuid())
-  inviteQrCode     String @unique
-
+  name      String
+  email     String   @unique
+  password  String
+  role      String   @default("admin")
+  isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
 
+  @@index([email])
+}
+
+model Event {
+  id                   String              @id @default(cuid())
+  name                 String
+  slug                 String              @unique
+  description          String?
+  codePrefix           String
+  attendantCodePattern String
+  driverCodePattern    String?
+  isActive             Boolean             @default(true)
+  startDate            DateTime?
+  endDate              DateTime?
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+  invites              Invite[]
+  scannerAssignments   ScannerAssignment[]
+
+  @@index([slug])
+  @@index([isActive])
+}
+
+model Scanner {
+  id               String              @id @default(cuid())
+  name             String
+  email            String?
+  phoneNumber      String?             @unique
+  pin              String
+  isActive         Boolean             @default(true)
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  invites          Invite[]
+  eventAssignments ScannerAssignment[]
+
+  @@index([phoneNumber])
+}
+
+model ScannerAssignment {
+  id         String   @id @default(cuid())
+  scannerId  String
+  eventId    String
+  assignedAt DateTime @default(now())
+  event      Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  scanner    Scanner  @relation(fields: [scannerId], references: [id], onDelete: Cascade)
+
+  @@unique([scannerId, eventId])
+  @@index([scannerId])
+  @@index([eventId])
+}
+
+model Invite {
+  id           String   @id @default(cuid())
+  inviteQrCode String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  eventId      String
+  scannerId    String
+  event        Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  scanner      Scanner  @relation(fields: [scannerId], references: [id])
+
+  @@unique([inviteQrCode, eventId])
   @@index([inviteQrCode])
+  @@index([eventId])
+  @@index([scannerId])
 }
