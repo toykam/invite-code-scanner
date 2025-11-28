@@ -24,20 +24,43 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Check cache first
+    const cachedEvents = localStorage.getItem('home_events_cache');
+    const cacheTimestamp = localStorage.getItem('home_events_cache_time');
+    
+    if (cachedEvents && cacheTimestamp) {
+      const cacheAge = Date.now() - parseInt(cacheTimestamp);
+      // Use cache if less than 5 minutes old
+      if (cacheAge < 5 * 60 * 1000) {
+        setEvents(JSON.parse(cachedEvents));
+        setLoading(false);
+        // Still fetch in background to update
+        fetchActiveEvents(true);
+        return;
+      }
+    }
+    
     fetchActiveEvents();
   }, []);
 
-  const fetchActiveEvents = async () => {
+  const fetchActiveEvents = async (background = false) => {
     try {
-      const response = await fetch("/api/events?activeOnly=true");
+      const response = await fetch("/api/events?activeOnly=true", {
+        cache: 'no-store'
+      });
       const data = await response.json();
       if (response.ok) {
         setEvents(data.events);
+        // Cache the results
+        localStorage.setItem('home_events_cache', JSON.stringify(data.events));
+        localStorage.setItem('home_events_cache_time', Date.now().toString());
       }
     } catch (error) {
       console.error("Error fetching events:", error);
     } finally {
-      setLoading(false);
+      if (!background) {
+        setLoading(false);
+      }
     }
   };
 
@@ -52,10 +75,51 @@ export default function Home() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-8 flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>
-          <p className="mt-4 text-gray-600 font-medium">Loading events...</p>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+        {/* Header Skeleton */}
+        <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-16 px-4 sm:px-8 shadow-xl">
+          <div className="max-w-6xl mx-auto text-center">
+            <div className="w-20 h-20 bg-white/20 rounded-full mx-auto mb-4"></div>
+            <div className="h-12 bg-white/20 rounded-lg w-64 mx-auto mb-4"></div>
+            <div className="h-6 bg-white/20 rounded-lg w-48 mx-auto mb-8"></div>
+            <div className="h-12 bg-white/30 rounded-full w-40 mx-auto"></div>
+          </div>
+        </div>
+
+        {/* Events Section Skeleton */}
+        <div className="max-w-6xl mx-auto px-4 sm:px-8 py-12">
+          <div className="mb-8">
+            <div className="h-8 shimmer rounded-lg w-48 mb-2"></div>
+            <div className="h-4 shimmer rounded w-64"></div>
+          </div>
+          
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100">
+                {/* Card Header */}
+                <div className="bg-gradient-to-r from-blue-500 to-purple-500 p-6">
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="h-6 bg-white/20 rounded w-32"></div>
+                    <div className="w-8 h-8 bg-white/20 rounded"></div>
+                  </div>
+                  <div className="h-6 bg-white/30 rounded-full w-20"></div>
+                </div>
+
+                {/* Card Body */}
+                <div className="p-6 space-y-4">
+                  <div className="space-y-2">
+                    <div className="h-4 shimmer rounded w-full"></div>
+                    <div className="h-4 shimmer rounded w-3/4"></div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="h-4 shimmer rounded w-40"></div>
+                    <div className="h-4 shimmer rounded w-36"></div>
+                  </div>
+                  <div className="h-12 shimmer rounded-xl w-full"></div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     );

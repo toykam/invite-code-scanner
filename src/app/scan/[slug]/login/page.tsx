@@ -19,28 +19,58 @@ export default function ScannerLoginPage() {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [pin, setPin] = useState("");
   const [loading, setLoading] = useState(false);
+  const [fetchingEvent, setFetchingEvent] = useState(true);
 
   useEffect(() => {
     if (slug) {
+      // Check cache first
+      const cacheKey = `scanner_event_${slug}`;
+      const cachedEvent = localStorage.getItem(cacheKey);
+      const cacheTimestamp = localStorage.getItem(`${cacheKey}_time`);
+      
+      if (cachedEvent && cacheTimestamp) {
+        const cacheAge = Date.now() - parseInt(cacheTimestamp);
+        // Use cache if less than 10 minutes old
+        if (cacheAge < 10 * 60 * 1000) {
+          setEvent(JSON.parse(cachedEvent));
+          setFetchingEvent(false);
+          // Still fetch in background to update
+          fetchEvent(true);
+          return;
+        }
+      }
+      
       fetchEvent();
     }
   }, [slug]);
 
-  const fetchEvent = async () => {
+  const fetchEvent = async (background = false) => {
     try {
-      const response = await fetch(`/api/events/${slug}`);
+      const response = await fetch(`/api/events/${slug}`, {
+        cache: 'no-store'
+      });
       const data = await response.json();
       if (response.ok && data.event.isActive) {
         setEvent(data.event);
+        // Cache the event
+        const cacheKey = `scanner_event_${slug}`;
+        localStorage.setItem(cacheKey, JSON.stringify(data.event));
+        localStorage.setItem(`${cacheKey}_time`, Date.now().toString());
       } else {
-        Swal.fire({
-          icon: "error",
-          title: "Error",
-          text: "Event not found or inactive",
-        });
+        if (!background) {
+          Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: "Event not found or inactive",
+          });
+        }
       }
     } catch (error) {
       console.error("Error fetching event:", error);
+    } finally {
+      if (!background) {
+        setFetchingEvent(false);
+      }
     }
   };
 
@@ -89,10 +119,54 @@ export default function ScannerLoginPage() {
     }
   };
 
+  if (fetchingEvent) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+        <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
+          {/* Icon Skeleton */}
+          <div className="bg-gradient-to-br from-indigo-100 to-blue-100 w-16 h-16 rounded-full mx-auto mb-6 shimmer"></div>
+          
+          {/* Title Skeleton */}
+          <div className="space-y-3 mb-8">
+            <div className="h-8 shimmer rounded-lg w-48 mx-auto"></div>
+            <div className="h-4 shimmer rounded w-64 mx-auto"></div>
+          </div>
+
+          {/* Form Skeleton */}
+          <div className="space-y-6">
+            <div>
+              <div className="h-4 shimmer rounded w-24 mb-2"></div>
+              <div className="h-12 shimmer rounded-lg w-full"></div>
+            </div>
+            <div>
+              <div className="h-4 shimmer rounded w-16 mb-2"></div>
+              <div className="h-12 shimmer rounded-lg w-full"></div>
+            </div>
+            <div className="h-12 shimmer rounded-lg w-full"></div>
+          </div>
+
+          {/* Back Link Skeleton */}
+          <div className="mt-6 text-center">
+            <div className="h-4 shimmer rounded w-32 mx-auto"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (!event) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-        <p>Loading...</p>
+        <div className="text-center bg-white rounded-2xl shadow-xl p-8 max-w-md">
+          <svg className="w-16 h-16 text-red-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <p className="text-gray-800 font-semibold text-lg mb-2">Event Not Found</p>
+          <p className="text-gray-600 text-sm mb-4">This event may be inactive or does not exist.</p>
+          <Link href="/" className="text-indigo-600 hover:underline font-medium">
+            ← Return to Home
+          </Link>
+        </div>
       </div>
     );
   }

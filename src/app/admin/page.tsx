@@ -60,6 +60,23 @@ export default function AdminPage() {
     const storedAdmin = localStorage.getItem("admin");
     if (storedAdmin) {
       setAdmin(JSON.parse(storedAdmin));
+      
+      // Check cache first
+      const cachedEvents = localStorage.getItem('admin_events_cache');
+      const cacheTimestamp = localStorage.getItem('admin_events_cache_time');
+      
+      if (cachedEvents && cacheTimestamp) {
+        const cacheAge = Date.now() - parseInt(cacheTimestamp);
+        // Use cache if less than 3 minutes old
+        if (cacheAge < 3 * 60 * 1000) {
+          setEvents(JSON.parse(cachedEvents));
+          setLoading(false);
+          // Still fetch in background to update
+          fetchEvents(true);
+          return;
+        }
+      }
+      
       fetchEvents();
     } else {
       router.push("/admin/login");
@@ -68,20 +85,30 @@ export default function AdminPage() {
 
   const handleLogout = () => {
     localStorage.removeItem("admin");
+    // Clear all caches on logout
+    localStorage.removeItem('admin_events_cache');
+    localStorage.removeItem('admin_events_cache_time');
     router.push("/admin/login");
   };
 
-  const fetchEvents = async () => {
+  const fetchEvents = async (background = false) => {
     try {
-      const response = await fetch("/api/events");
+      const response = await fetch("/api/events", {
+        cache: 'no-store'
+      });
       const data = await response.json();
       if (response.ok) {
         setEvents(data.events);
+        // Cache the results
+        localStorage.setItem('admin_events_cache', JSON.stringify(data.events));
+        localStorage.setItem('admin_events_cache_time', Date.now().toString());
       }
     } catch (error) {
       console.error("Error fetching events:", error);
     } finally {
-      setLoading(false);
+      if (!background) {
+        setLoading(false);
+      }
     }
   };
 
@@ -313,8 +340,57 @@ export default function AdminPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen p-8 flex items-center justify-center">
-        <p>Loading...</p>
+      <div className="min-h-screen p-4 sm:p-8 bg-gray-50">
+        <div className="max-w-7xl mx-auto">
+          {/* Header Skeleton */}
+          <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
+            <div className="flex justify-between items-center">
+              <div className="space-y-2">
+                <div className="h-3 shimmer rounded w-20"></div>
+                <div className="h-4 shimmer rounded w-32"></div>
+                <div className="h-3 shimmer rounded w-40"></div>
+              </div>
+              <div className="h-10 shimmer rounded-lg w-24"></div>
+            </div>
+          </div>
+
+          {/* Tabs Skeleton */}
+          <div className="bg-white rounded-lg shadow-sm p-2 mb-6 flex gap-2">
+            <div className="h-12 shimmer rounded-lg flex-1"></div>
+            <div className="h-12 shimmer rounded-lg flex-1"></div>
+            <div className="h-12 shimmer rounded-lg flex-1"></div>
+          </div>
+
+          {/* Content Skeleton */}
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <div className="h-10 shimmer rounded w-48"></div>
+              <div className="h-12 shimmer rounded-lg w-40"></div>
+            </div>
+
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="bg-white p-6 rounded-xl shadow-md border border-gray-200">
+                <div className="flex justify-between items-start mb-4">
+                  <div className="space-y-3 flex-1">
+                    <div className="h-6 shimmer rounded w-48"></div>
+                    <div className="h-4 shimmer rounded w-32"></div>
+                    <div className="h-4 shimmer rounded w-full max-w-md"></div>
+                  </div>
+                  <div className="h-6 shimmer rounded-full w-20"></div>
+                </div>
+                <div className="flex gap-4 mb-4">
+                  <div className="h-16 shimmer rounded-lg w-32"></div>
+                  <div className="h-16 shimmer rounded-lg w-32"></div>
+                </div>
+                <div className="flex gap-3">
+                  <div className="h-10 shimmer rounded-lg flex-1"></div>
+                  <div className="h-10 shimmer rounded-lg flex-1"></div>
+                  <div className="h-10 shimmer rounded-lg w-28"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
@@ -941,21 +1017,42 @@ function ScannersTab({
   const [selectedEventSlugs, setSelectedEventSlugs] = useState<string[]>([]);
 
   useEffect(() => {
+    // Check cache first
+    const cachedScanners = localStorage.getItem('admin_scanners_cache');
+    const cacheTimestamp = localStorage.getItem('admin_scanners_cache_time');
+    
+    if (cachedScanners && cacheTimestamp) {
+      const cacheAge = Date.now() - parseInt(cacheTimestamp);
+      // Use cache if less than 3 minutes old
+      if (cacheAge < 3 * 60 * 1000) {
+        setScanners(JSON.parse(cachedScanners));
+        setLoading(false);
+        // Still fetch in background to update
+        fetchScanners(true);
+        return;
+      }
+    }
+    
     fetchScanners();
   }, []);
 
-  const fetchScanners = async () => {
-    setLoading(true);
+  const fetchScanners = async (background = false) => {
+    if (!background) setLoading(true);
     try {
-      const response = await fetch(`/api/scanners`);
+      const response = await fetch(`/api/scanners`, {
+        cache: 'no-store'
+      });
       const data = await response.json();
       if (response.ok) {
         setScanners(data.scanners);
+        // Cache the results
+        localStorage.setItem('admin_scanners_cache', JSON.stringify(data.scanners));
+        localStorage.setItem('admin_scanners_cache_time', Date.now().toString());
       }
     } catch (error) {
       console.error("Error fetching scanners:", error);
     } finally {
-      setLoading(false);
+      if (!background) setLoading(false);
     }
   };
 
@@ -1274,20 +1371,42 @@ function AdminsTab({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Check cache first
+    const cachedAdmins = localStorage.getItem('admin_admins_cache');
+    const cacheTimestamp = localStorage.getItem('admin_admins_cache_time');
+    
+    if (cachedAdmins && cacheTimestamp) {
+      const cacheAge = Date.now() - parseInt(cacheTimestamp);
+      // Use cache if less than 3 minutes old
+      if (cacheAge < 3 * 60 * 1000) {
+        setAdmins(JSON.parse(cachedAdmins));
+        setLoading(false);
+        // Still fetch in background to update
+        fetchAdmins(true);
+        return;
+      }
+    }
+    
     fetchAdmins();
   }, []);
 
-  const fetchAdmins = async () => {
+  const fetchAdmins = async (background = false) => {
+    if (!background) setLoading(true);
     try {
-      const response = await fetch("/api/admin");
+      const response = await fetch("/api/admin", {
+        cache: 'no-store'
+      });
       const data = await response.json();
       if (response.ok) {
         setAdmins(data.admins);
+        // Cache the results
+        localStorage.setItem('admin_admins_cache', JSON.stringify(data.admins));
+        localStorage.setItem('admin_admins_cache_time', Date.now().toString());
       }
     } catch (error) {
       console.error("Error fetching admins:", error);
     } finally {
-      setLoading(false);
+      if (!background) setLoading(false);
     }
   };
 

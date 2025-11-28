@@ -41,41 +41,139 @@ export default function EventDetailPage() {
 
   useEffect(() => {
     if (slug) {
+      // Check cache first
+      const cacheKey = `event_detail_${slug}`;
+      const cachedData = localStorage.getItem(cacheKey);
+      const cacheTimestamp = localStorage.getItem(`${cacheKey}_time`);
+      
+      if (cachedData && cacheTimestamp) {
+        const cacheAge = Date.now() - parseInt(cacheTimestamp);
+        // Use cache if less than 2 minutes old
+        if (cacheAge < 2 * 60 * 1000) {
+          const data = JSON.parse(cachedData);
+          setEvent(data.event);
+          setStats(data.stats);
+          setLoading(false);
+          // Still fetch in background to update
+          fetchEventDetails(true);
+          fetchEventStats(true);
+          return;
+        }
+      }
+      
       fetchEventDetails();
       fetchEventStats();
     }
   }, [slug]);
 
-  const fetchEventDetails = async () => {
+  const fetchEventDetails = async (background = false) => {
     try {
-      const response = await fetch(`/api/events/${slug}`);
+      const response = await fetch(`/api/events/${slug}`, {
+        cache: 'no-store'
+      });
       const data = await response.json();
       if (response.ok) {
         setEvent(data.event);
+        // Update cache
+        updateCache(data.event, stats);
       }
     } catch (error) {
       console.error("Error fetching event:", error);
     }
   };
 
-  const fetchEventStats = async () => {
+  const fetchEventStats = async (background = false) => {
     try {
-      const response = await fetch(`/api/events/${slug}/stats`);
+      const response = await fetch(`/api/events/${slug}/stats`, {
+        cache: 'no-store'
+      });
       const data = await response.json();
       if (response.ok) {
         setStats(data.stats);
+        // Update cache
+        updateCache(event, data.stats);
       }
     } catch (error) {
       console.error("Error fetching stats:", error);
     } finally {
-      setLoading(false);
+      if (!background) {
+        setLoading(false);
+      }
+    }
+  };
+
+  const updateCache = (eventData: Event | null, statsData: Stats | null) => {
+    if (eventData || statsData) {
+      const cacheKey = `event_detail_${slug}`;
+      const cacheData = {
+        event: eventData || event,
+        stats: statsData || stats
+      };
+      localStorage.setItem(cacheKey, JSON.stringify(cacheData));
+      localStorage.setItem(`${cacheKey}_time`, Date.now().toString());
     }
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen p-8 flex items-center justify-center">
-        <p>Loading...</p>
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 sm:p-8">
+        <div className="max-w-6xl mx-auto">
+          {/* Back Button Skeleton */}
+          <div className="mb-6">
+            <div className="h-10 shimmer rounded-lg w-32"></div>
+          </div>
+
+          {/* Header Card Skeleton */}
+          <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-8 shadow-2xl mb-8">
+            <div className="flex flex-col sm:flex-row justify-between items-start gap-6">
+              <div className="flex-1 space-y-4">
+                <div className="h-10 bg-white/20 rounded-lg w-64"></div>
+                <div className="h-5 bg-white/20 rounded w-40"></div>
+                <div className="h-4 bg-white/20 rounded w-full max-w-md"></div>
+              </div>
+              <div className="flex gap-2">
+                <div className="h-8 bg-white/20 rounded-full w-20"></div>
+                <div className="h-8 bg-white/20 rounded-full w-20"></div>
+              </div>
+            </div>
+          </div>
+
+          {/* Stats Grid Skeleton */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="bg-white rounded-xl p-6 shadow-md border border-gray-100">
+                <div className="space-y-3">
+                  <div className="h-4 shimmer rounded w-24"></div>
+                  <div className="h-10 shimmer rounded w-20"></div>
+                  <div className="h-3 shimmer rounded w-16"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Content Sections Skeleton */}
+          <div className="grid lg:grid-cols-2 gap-8">
+            <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
+              <div className="h-6 shimmer rounded w-32 mb-6"></div>
+              <div className="space-y-4">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
+                    <div className="w-10 h-10 shimmer rounded-full"></div>
+                    <div className="flex-1 space-y-2">
+                      <div className="h-4 shimmer rounded w-32"></div>
+                      <div className="h-3 shimmer rounded w-24"></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
+              <div className="h-6 shimmer rounded w-40 mb-6"></div>
+              <div className="h-64 shimmer rounded-lg"></div>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
