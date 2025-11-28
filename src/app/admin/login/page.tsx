@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import Swal from "sweetalert2";
 
 export default function AdminLoginPage() {
@@ -119,9 +120,9 @@ export default function AdminLoginPage() {
         </form>
 
         <div className="mt-6 text-center">
-          <a href="/" className="text-purple-600 hover:underline text-sm">
+          <Link href="/" className="text-purple-600 hover:underline text-sm">
             ← Back to Home
-          </a>
+          </Link>
         </div>
       </div>
     </div>
