@@ -130,18 +130,18 @@ export default function Home() {
       {/* Header Section */}
       <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-16 px-4 sm:px-8 shadow-xl">
         <div className="max-w-6xl mx-auto text-center">
-          <div className="inline-block mb-4">
+          {/* <div className="inline-block mb-4">
             <svg className="w-20 h-20 mx-auto" fill="currentColor" viewBox="0 0 24 24">
               <path d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
             </svg>
-          </div>
+          </div> */}
           <h1 className="text-5xl sm:text-6xl font-extrabold mb-4 tracking-tight">
             Event Scanner
           </h1>
           <p className="text-xl sm:text-2xl text-blue-100 mb-8 font-light">
             QR Code Check-In System
           </p>
-          <Link 
+          {/* <Link 
             href="/admin" 
             className="inline-flex items-center gap-2 bg-white text-blue-600 px-8 py-3 rounded-full hover:bg-blue-50 font-semibold shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
           >
@@ -150,7 +150,7 @@ export default function Home() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
             Admin Panel
-          </Link>
+          </Link> */}
         </div>
       </div>
 
